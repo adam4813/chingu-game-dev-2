@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Gamedev Phaser Workshop - lesson 01: Initialize the framework</title>
+    <style>* { padding: 0; margin: 0; }</style>
+    <script src="js/phaser.min.js"></script>
+</head>
+<body>
+<script>
+    var game = new Phaser.Game(480, 320, Phaser.AUTO, null, {
+      preload: preload, create: create, update: update
+    });
+
+    var mario;
+    var mushroom;
+    var mushroomAnimation=true;
+    var cursors;
+    var jumpTimer=0;
+    var facing='right';
+
+    function preload() {
+        //canvas scaling 
+        game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+        game.scale.pageAlignHorizontally = true;
+        game.scale.pageAlignVertically = true;
+        //default canvas color
+        game.stage.backgroundColor = '#eee';
+        //mario sprite
+        game.load.spritesheet('mario', 'img/mario.png', 16, 16);
+        //mushroom sprite
+        game.load.spritesheet('mushroom','img/mushroom.png',16,16);
+
+    }
+    function create() {
+        game.physics.startSystem(Phaser.Physics.ARCADE);
+        cursors = game.input.keyboard.createCursorKeys();
+        //Mario Set Up
+        mario = game.add.sprite(game.world.width*0.5, game.world.height-16, 'mario');
+        mario.anchor.set(0.5);
+        mario.scale.setTo(1.5,1.5);
+        game.physics.enable(mario, Phaser.Physics.ARCADE);
+        mario.body.gravity.y = 100; 
+        mario.body.collideWorldBounds = true;
+        mario.animations.add('right', [1,2,3,0], 16);
+        mario.animations.add('left', [8,9,10,7], 16);
+        mario.animations.add('upRight',[5,0],1);
+        mario.animations.add('upLeft',[12,7],1);
+        mario.animations.add('dies',[6]);
+        //mushroom Set Up 
+        mushroom = game.add.sprite(game.world.width-20, game.world.height-8, 'mushroom');
+        mushroom.anchor.set(0.5);
+        game.physics.enable(mushroom, Phaser.Physics.ARCADE);
+        mushroom.body.collideWorldBounds = true;
+        mushroom.body.gravity.y=100;
+        mushroom.animations.add('left',[1,0,1,0],4);
+        mushroom.animations.add('dies',[2]);
+        mushroom.body.velocity.set(-50,0);
+    
+    }
+    function update() {
+
+        //Mario Behavior
+        if (cursors.right.isDown)
+        {
+            mario.x+=2;
+            mario.animations.play('right');
+            facing='right';
+        }
+        else if (cursors.left.isDown)
+        {
+            mario.x-=2;
+            mario.animations.play('left');
+            facing='left';
+        }
+        else if (cursors.up.isDown && mario.body.onFloor())
+        {
+            mario.y-=50;
+            if (facing=='right') {
+                mario.animations.play('upRight');
+            }
+            else if (facing=='left'){
+                mario.animations.play('upLeft');
+            }
+        }
+
+        //mushroom Behavior
+        if (mushroomAnimation==true){
+            mushroom.animations.play('left');
+            mushroom.body.bounce.set(1);
+        }
+        //collision detection
+        game.physics.arcade.collide(mario, mushroom, marioDies);
+
+
+    }
+
+
+    //Mario / Mushroom Interaction
+    function marioDies (mario,mushroom){
+        if (mushroom.body.touching.up){
+            mushroom.body.velocity=(0,0);
+            mushroom.animations.play('dies');
+            mushroomAnimation=false;
+            game.time.events.add(Phaser.Timer.SECOND,function (){mushroom.kill();});
+
+        }
+        else {
+            mario.body.velocity=(0,0);
+            mario.animations.play('dies');
+            cursors=false;
+        }
+    }
+
+
+
+</script>
+</body>
+</html>
